@@ -2,7 +2,7 @@
  * @Author: jiejie
  * @Github: https://github.com/jiejieTop
  * @Date: 2019-12-09 21:31:25
- * @LastEditTime: 2020-05-26 21:15:46
+ * @LastEditTime: 2020-06-02 00:30:32
  * @Description: the code belongs to jiejie, please keep the author information and source code according to the license.
  */
 #include "httpclient.h"
@@ -17,6 +17,15 @@ static http_list_t _http_client_free_list;
 static http_list_t _http_client_used_list;
 static platform_mutex_t _client_pool_lock;
 
+static void _http_client_variables_init(http_client_t *c)
+{
+    c->method = HTTP_REQUEST_METHOD_INVALID;
+    c->interest_event = 0;
+    c->process = 0;
+    c->total = 0;
+    c->data = NULL;
+}
+
 static int _http_client_internal_event_handle(void *e)
 {
     http_event_t *event = e;
@@ -25,7 +34,7 @@ static int _http_client_internal_event_handle(void *e)
 
     c->process = interceptor->data_process;
     c->total = http_response_get_length(&interceptor->response);
-
+    
     if (0 == c->interest_event)
         RETURN_ERROR(HTTP_SUCCESS_ERROR);
 
@@ -158,6 +167,7 @@ void http_client_exit(void)
     
 #ifdef HTTP_USING_WORK_QUEUE
     http_wq_wait_exit();
+    http_wq_pool_deinit();
 #endif
 
     do {
@@ -203,12 +213,16 @@ void http_client_release(http_client_t *c)
 
     platform_mutex_lock(&_client_pool_lock);
 
+    _http_client_variables_init(c);
+
     http_list_del(&c->list);
     http_list_add(&c->list, &_http_client_free_list);
 
     platform_mutex_unlock(&_client_pool_lock);
 
     http_interceptor_release(c->interceptor);
+
+    http_release_connect_params_variables(c->connect_params);
 }
 
 void http_client_set_interest_event(http_client_t *c, http_event_type_t event)

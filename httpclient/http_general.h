@@ -2,7 +2,7 @@
  * @Author: jiejie
  * @Github: https://github.com/jiejieTop
  * @Date: 2020-05-08 21:08:39
- * @LastEditTime: 2020-05-11 11:34:10
+ * @LastEditTime: 2020-06-01 23:52:17
  * @Description: the code belongs to jiejie, please keep the author information and source code according to the license.
  */
 #ifndef _HTTP_GENERAL_H_
@@ -41,6 +41,27 @@
     HTTP_SET_CONNECT_PARAMS_STATEMENT(name, type)                           \
     HTTP_GET_CONNECT_PARAMS_STATEMENT(name, type)
 
+#define HTTP_FREE_CONNECT_PARAMS(conn, name)                                \
+    do {                                                                    \
+        if ( NULL != ( conn->http_##name ) ) {                              \
+            platform_memory_free( conn->http_##name );                      \
+            conn->http_##name = NULL;                                       \
+        }                                                                   \
+    } while(0)
+
+#define HTTP_FREE_ALL_CONNECT_PARAMS(conn)                                  \
+    do {                                                                    \
+        HTTP_FREE_CONNECT_PARAMS(conn, url);                                \
+        HTTP_FREE_CONNECT_PARAMS(conn, scheme);                             \
+        HTTP_FREE_CONNECT_PARAMS(conn, host);                               \
+        HTTP_FREE_CONNECT_PARAMS(conn, user);                               \
+        HTTP_FREE_CONNECT_PARAMS(conn, password);                           \
+        HTTP_FREE_CONNECT_PARAMS(conn, path);                               \
+        HTTP_FREE_CONNECT_PARAMS(conn, query);                              \
+        HTTP_FREE_CONNECT_PARAMS(conn, farg);                               \
+        HTTP_FREE_CONNECT_PARAMS(conn, cert_pem);                           \
+        HTTP_FREE_CONNECT_PARAMS(conn, port);                               \
+    } while(0)
 
 typedef struct http_connect_params {
     char                        *http_url;
@@ -68,6 +89,6 @@ HTTP_SET_AND_GET_CONNECT_PARAMS_STATEMENT(port, const char*)
 
 http_connect_params_t *http_assign_connect_params(void);
 void http_release_connect_params(http_connect_params_t *connect_params);
-
+void http_release_connect_params_variables(http_connect_params_t *connect_params);
 
 #endif // !_HTTP_GENERAL_H_
